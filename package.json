@@ -1,0 +1,20 @@
+{
+  "name": "sqlite3-key-value-data-store",
+  "version": "1.0.0",
+  "description": "Node.js key/value store for SQLITE3 that includes data search features",
+  "main": "index.js",
+  "scripts": {
+    "watch": "tsc -w"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/node": "^22.10.1",
+    "typescript": "^5.7.2"
+  },
+  "peerDependencies": {
+    "sqlite-regex": "^0.2.4-alpha.1",
+    "sqlite3": "^5.1.7"
+  }
+}
