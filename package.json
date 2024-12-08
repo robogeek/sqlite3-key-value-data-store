@@ -2,19 +2,34 @@
   "name": "sqlite3-key-value-data-store",
   "version": "1.0.0",
   "description": "Node.js key/value store for SQLITE3 that includes data search features",
-  "main": "index.js",
+  "main": "dist/index.js",
+  "type": "module",
   "scripts": {
     "watch": "tsc -w"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": [
+    "sqlite3",
+    "SQLite",
+    "db",
+    "database",
+    "KVS",
+    "key",
+    "value",
+    "store",
+    "key-value"
+  ],
+  "author": "David Herron <david@davidherron.com>",
   "license": "ISC",
   "devDependencies": {
     "@types/node": "^22.10.1",
+    "@types/sqlstring": "^2.3.2",
     "typescript": "^5.7.2"
   },
   "peerDependencies": {
     "sqlite-regex": "^0.2.4-alpha.1",
     "sqlite3": "^5.1.7"
+  },
+  "dependencies": {
+    "sqlstring": "^2.3.3"
   }
 }

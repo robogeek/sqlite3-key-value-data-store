@@ -1,6 +1,7 @@
 
 import util from 'node:util';
-import * as sqlite3 from 'sqlite3';
+import sqlite3 from 'sqlite3';
+import { selectors2where } from './finder.js';
 // import sqdb from './sqdb.js';
 
 // PROBLEM - @akashacms/plugns-tagged-content
@@ -108,7 +109,7 @@ export class SQ3DataStore {
     constructor(
             DB: sqlite3.Database | string,
             tablenm: string) {
-        
+
         if (typeof DB === 'object'
          && DB instanceof sqlite3.Database
         ) {
@@ -138,6 +139,27 @@ export class SQ3DataStore {
     }
 
     get DB(): sqlite3.Database { return this.#DB; }
+
+    // This can be useful for debugging.
+    // This SQLITE query retrieves the table listing
+    // all the existing tables.
+
+    // async tables() {
+    //     const rows = await new Promise((resolve, reject) => {
+    //         this.#DB.all(`
+    //             SELECT * FROM sqlite_master;
+    //         `, {},
+    //         (err, rows) => {
+    //             if (err) {
+    //                 console.error(`put ERROR `, err.stack);
+    //                 reject(err);
+    //             } else {
+    //                 resolve(rows);
+    //             }
+    //         });
+    //     });
+    //     return rows;
+    // }
 
     async put(key: string, value: any): Promise<void> {
         // insert into ...
@@ -254,52 +276,10 @@ export class SQ3DataStore {
      * 
      * @param selector 
      */
-    async find(selectors: Array<any>)
+    async find(selectors: any)
         : Promise<Array<any> | undefined>
     {
-        let where = '';
-
-        for (const sel in selectors) {
-            // skip this for now
-            if (sel === '$OR') continue;
-
-            if (typeof selectors[sel] === 'object') {
-                let or = '';
-                const tosel = selectors[sel];
-                for (const op in tosel) {
-                    // console.log(`${op} ${tosel[op]}`);
-                    if (op === 'lt') {
-                        or += ` ( json_extract(value, '${sel}') IS NOT NULL AND json_extract(value, '${sel}') < ${tosel[op]} ) OR `;
-                    } else if (op === 'eq') {
-                        or += ` ( json_extract(value, '${sel}') IS NOT NULL AND json_extract(value, '${sel}') == ${tosel[op]} ) OR `;
-                    } else if (op === 'gt') {
-                        or += ` ( json_extract(value, '${sel}') IS NOT NULL AND json_extract(value, '${sel}') > ${tosel[op]} ) OR `;
-                    } else if (op === 'ne') {
-                        or += ` ( json_extract(value, '${sel}') IS NOT NULL AND json_extract(value, '${sel}') <> ${tosel[op]} ) OR `;
-                    } else if (op === 'like') {
-                        or += ` ( json_extract(value, '${sel}') IS NOT NULL AND json_extract(value, '${sel}') LIKE '${tosel[op]}' ) OR `;
-                    } else if (op === 'glob') {
-                        or += ` ( json_extract(value, '${sel}') IS NOT NULL AND json_extract(value, '${sel}') GLOB '${tosel[op]}' ) OR `;
-                    } else if (op === 'regexp') {
-                        or += ` ( json_extract(value, '${sel}') IS NOT NULL AND json_extract(value, '${sel}') regexp '${tosel[op]}' ) OR `;
-                    }
-                }
-                const matches = or.match(/(.*) *OR *$/);
-                if (Array.isArray(matches)) {
-                    where += ` ${matches[1]} AND `;
-                } else {
-                    console.warn(`No operators matched ${util.inspect(tosel)}`);
-                }
-            } else {
-                where += ` ( json_extract(value, '${sel}') == ${selectors[sel]} ) AND `;
-            }
-        }
-
-        const matches = where.match(/(.*) *AND *$/);
-        if (Array.isArray(matches)) {
-            // console.log(matches);
-            where = matches[1];
-        }
+        let where = selectors2where(selectors);
 
         // console.log(where);
 
