@@ -2,7 +2,6 @@
 import util from 'node:util';
 import sqlite3 from 'sqlite3';
 import { selectors2where } from './finder.js';
-// import sqdb from './sqdb.js';
 
 // PROBLEM - @akashacms/plugns-tagged-content
 // is using PouchDB which then brought in
@@ -61,44 +60,7 @@ import { selectors2where } from './finder.js';
 // FROM DOCUMENTS
 // WHERE renderPath2 LIKE '%index.html';
 
-////////////////// Opening Database connection
-
-// let DB: sqlite3.Database;
-
-/**
- * Use an existing DB
- * @param db 
- */
-// export function useDB(db: sqlite3.Database) {
-//     DB = db;
-// }
-
-/**
- * Open a database connection to the
- * named location.
- *
- * @param dburl 
- */
-// export function open(dburl: string) {
-//     DB = new sqlite3.Database(dburl);
-// }
-
 ///////////////////// Create a table
-
-// export async function kvtable(name: string) {
-//     const tablenm = `kv${name}`;
-//     const indexnm = `kv_index_${name}`;
-//     const result = await DB.exec(`
-//         CREATE TABLE ${tablenm} (
-//             key TEXT PRIMARY KEY,
-//             value TEXT
-//         ) WITHOUT ROWID;
-//         CREATE UNIQUE INDEX ${indexnm}
-//             ON ${tablenm} (key);
-//     `);
-
-//     return new SQ3DataStore(DB, tablenm);
-// }
 
 export class SQ3DataStore {
 
@@ -107,8 +69,9 @@ export class SQ3DataStore {
     #indexnm: string;
 
     constructor(
-            DB: sqlite3.Database | string,
-            tablenm: string) {
+        DB: sqlite3.Database | string,
+        tablenm: string
+    ) {
 
         if (typeof DB === 'object'
          && DB instanceof sqlite3.Database
@@ -125,16 +88,21 @@ export class SQ3DataStore {
         // });
 
         this.#tablenm = tablenm;
+        this.#indexnm = `kv_index_${this.#tablenm}`;
 
-        this.#indexnm = `kv_index_${tablenm}`;
         this.#DB.exec(`
-            CREATE TABLE ${tablenm} (
+            CREATE TABLE ${this.#tablenm} (
                 key TEXT PRIMARY KEY,
                 value TEXT
             ) WITHOUT ROWID;
             CREATE UNIQUE INDEX ${this.#indexnm}
                 ON ${this.#tablenm} (key);
-        `);
+        `,
+        (err) => {
+            if (err) {
+                console.error(`******** Could not create database ${this.#tablenm}`);
+            }
+        });
 
     }
 
@@ -161,7 +129,9 @@ export class SQ3DataStore {
     //     return rows;
     // }
 
-    async put(key: string, value: any): Promise<void> {
+    async put(key: string, value: any)
+        : Promise<void>
+    {
         // insert into ...
         // console.log(`before get ${key}`);
         const update = await this.get(key);
@@ -193,7 +163,9 @@ export class SQ3DataStore {
         // console.log(`did put ${key}`);
     }
 
-    async update(key: string, value: any): Promise<void> {
+    async update(key: string, value: any)
+        : Promise<void>
+    {
         // console.log(`to update ${key}`, value);
         const that = this;
         const result = await new Promise((resolve, reject) => {
@@ -215,7 +187,9 @@ export class SQ3DataStore {
         // console.log(`updated ${key}`);
     }
 
-    async get(key: string): Promise<any | undefined> {
+    async get(key: string)
+        : Promise<any | undefined>
+    {
         // ... get item from table
         // console.log(`get ${key}`);
         const that = this;
@@ -310,7 +284,9 @@ export class SQ3DataStore {
         }
     }
 
-    async findAll(): Promise<Array<any>> {
+    async findAll()
+        : Promise<Array<any>>
+    {
 
         const query = `
                 SELECT key, value
@@ -330,7 +306,9 @@ export class SQ3DataStore {
         });
     }
 
-    async delete(key: string): Promise<void> {
+    async delete(key: string)
+        : Promise<void>
+    {
         // .. delete item from table
         await new Promise((resolve, reject) => {
             this.#DB.run(`
@@ -352,7 +330,9 @@ export class SQ3DataStore {
         });
     }
 
-    async drop(): Promise<void> {
+    async drop()
+        : Promise<void>
+    {
         // ... DROP TABLE
         await new Promise((resolve, reject) => {
             this.#DB.run(`

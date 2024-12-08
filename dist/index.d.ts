@@ -1,14 +1,4 @@
 import sqlite3 from 'sqlite3';
-/**
- * Use an existing DB
- * @param db
- */
-/**
- * Open a database connection to the
- * named location.
- *
- * @param dburl
- */
 export declare class SQ3DataStore {
     #private;
     constructor(DB: sqlite3.Database | string, tablenm: string);
