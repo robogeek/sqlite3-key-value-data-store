@@ -115,7 +115,75 @@ Deletes the data table from the SQLITE3 instance.
 
 # Searching with the `find` method
 
+The `find` method allows one to search against the JSON value similarly to MongoDB queries.  This relies on the `json_extract` function from the JSON extension.  This extension is generally bundled with SQLITE3, fortunately.
 
+Simple example:
+
+```js
+const found = await table.find({
+    '$.vpath': 'index.html'
+});
+```
+
+This searches for items where the `vpath` item in the JSON is precisely equal to `index.html`.
+
+The `$.vpath` string is in the format required by the JSON extension.  The documentation reads as so:
+
+> A well-formed PATH is a text value that begins with exactly one '$' character followed by zero or more instances of ".objectlabel" or "[arrayindex]".
+
+An equivalent is:
+
+```js
+const found = await table.find({
+    '$.vpath': { $eq: 'index.html' }
+});
+```
+
+The first example shows the implicit equality comparison.  This is an explicit equality comparison using the `$eq` operator.
+
+The full list of operators of this sort are:
+
+* **`$eq`** - equality
+* **`$lt`** - less than
+* **`$lte`** - less than or equal
+* **`$gt`** - greater than
+* **`$gte`** - greater than or equal
+* **`$ne`** - not equal
+* **`$like`** - matches using an SQL LIKE clause - e.g. `'%Smith'`
+* **`$glob`** - matches using an filesystem path match - e.g. `'**/*.html'`
+* **`$regexp`** - matches using an regular expression - e.g. `'^Smith.*$'`
+
+**`$null` or `$notnull`**
+
+These operators test if the value is `null` (using `IS NULL`) or not null (using `IS NOT NULL`).
+
+```js
+const found = await table.find({
+    $notnull: '$.vpath'
+});
+```
+
+The `$null` operator matches both fields which are `undefined` or contain the value `null`.
+
+**`$exists`**
+
+Attempts to determine if the item exists using the `EXISTS` operator.  However, this produces a syntax error from SQLITE3.
+
+**`$or` or `$and`**
+
+These take an array of sub-clauses.  The `$or` form matches if one of the sub-clauses matches.  The `$and` form matches if all the sub-clauses matches.
+
+```js
+const found = await table.find({
+    $or: [
+        { '$.dirname': 'subdir' },
+        { $and: [
+            { '$.dirname': { $like: 'hier-broke%' }},
+            { '$.index': { $eq: 3 } }
+        ]}
+    ]
+});
+```
 
 # Installing the REGEXP extension
 
@@ -139,3 +207,27 @@ db.loadExtension(regexp_loadable_path, (err) => {
     // handle error
 });
 ```
+
+## Using REGEXP where there might be missing data
+
+A collection of JSON documents are unlikely to all have the same shape or content.
+
+You can easily end up with a situation of where a `{ $regexp: 'regular-expression' }` operator is matched against a field which does not exist in all documents.  In such a case an error is thrown, `SQLITE_ERROR: Unexpected null value`.
+
+The solution is to add the `$notnull` operator like so:
+
+```js
+const rows = await table.find({
+    $notnull: '$.name',
+    '$.name': { $regexp: '.*Smith.*' }
+});
+```
+
+The generated SQL will be:
+
+```
+WHERE json_extract(value, '$.name') IS NOT NULL
+  AND json_extract(value, '$.name') regexp '.*Smith.*'
+```
+
+This ensures the field exists before running the regular expression.
