@@ -1,10 +1,22 @@
 # Key/Value store for SQLite3, with data search features
 
-The `sqlite3-key-value-data-store` package is primarily a key/value store.  Like KVS packages it has `put`, `get`, and `delete` methods that work with a simple _key_ to add/retrieve/delete a _value_.
+The `sqlite3-key-value-data-store` package is primarily a key/value store.  It runs on top of SQLITE3, and is meant to be used in-memory (`:memory:`).
 
-The _value_ is treated as, and stored as, JSON.
+Like other KVS packages it has `put`, `get`, `update`, and `delete` methods that take a simple text _key_ to add/retrieve/update/delete a _value_. The _value_ is treated as, and stored as, JSON.
 
-In addition, searches can be done on fields in the _value_ field.  The `find` method can be used to search for items by making comparisons on JSON fields.
+The additional feature of interest is the `find` method allowing MongoDB-like searching on the JSON data.  This relies on SQLITE3's built-in JSON capabilities.  Selector objects are converted, on the fly, into SQL WHERE clauses testing JSON fields.
+
+Comparison to related packages:
+
+* KeyV is a typical key/value store.
+    * Its API supports `get`, `set` and `delete` methods.
+    * It supports multiple back-end storage engines.
+    * It is an excellent choice if your needs are limited to set/get/delete values using a key.
+* PouchDB is a light-weight database that can serve as a key/value store and it can run in apps on mobile devices.
+    * It has the `get`, `set`, and `delete` methods of a key/value store.
+    * It supports synchronization to CouchDB for data persistence.
+    * It supports a MongoDB-like `find` method, if you install the `pouchdb-find` plugin.
+    * But, there are many strage quirks to the API, and on Node.js it brings in a lot of stale LevelDown-related packages that generate security warnings.
 
 # Install and usage
 
@@ -56,13 +68,13 @@ const table2 = new SQ3DataStore(table1.DB, 'table2');
 const table3 = new SQ3DataStore(table1.DB, 'table3'); 
 ```
 
-This shows creating three key/value pools in the same `:memory:` instance.
+This shows creating three key/value pools in the same `:memory:` instance.  One can create many data tables.
 
 ```js
 SQ3DataStore#DB
 ```
 
-As just explained, the `DB` getter retrieves the `Database` instance being used in the table.
+As just explained, the `DB` getter retrieves the `Database` instance being used in the table.  It means your code can go behind the scenes and directly invoke SQLITE3 API methods.
 
 ```js
 SQ3DataStore#put(
@@ -83,7 +95,8 @@ SQ3DataStore#update(
 Replaces the _value_ for an existing _key_.
 
 ```js
-SQ3DataStore#get(key: string): Promise<any | undefined>
+SQ3DataStore#get(key: string)
+    : Promise<any | undefined>
 ```
 
 Retrieves the value for the provided key.
@@ -115,7 +128,7 @@ Deletes the data table from the SQLITE3 instance.
 
 # Searching with the `find` method
 
-The `find` method allows one to search against the JSON value similarly to MongoDB queries.  This relies on the `json_extract` function from the JSON extension.  This extension is generally bundled with SQLITE3, fortunately.
+The `find` method allows one to search against the JSON value similarly to MongoDB queries.  This relies on the `json_extract` function from the JSON extension.  This extension is generally bundled with SQLITE3.
 
 Simple example:
 
@@ -127,11 +140,11 @@ const found = await table.find({
 
 This searches for items where the `vpath` item in the JSON is precisely equal to `index.html`.
 
-The `$.vpath` string is in the format required by the JSON extension.  The documentation reads as so:
+The `$.vpath` string is in the format required by the JSON extension.  That documentation reads as so:
 
 > A well-formed PATH is a text value that begins with exactly one '$' character followed by zero or more instances of ".objectlabel" or "[arrayindex]".
 
-An equivalent is:
+The simple example is equivalent to:
 
 ```js
 const found = await table.find({
