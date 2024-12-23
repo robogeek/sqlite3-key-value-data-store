@@ -3,63 +3,6 @@ import util from 'node:util';
 import sqlite3 from 'sqlite3';
 import { selectors2where } from './finder.js';
 
-// PROBLEM - @akashacms/plugns-tagged-content
-// is using PouchDB which then brought in
-// a lot of unwanted dependencies in the
-// LevelDown arena.
-//
-// It should be possible to use SQLITE3 to
-// implement a key/value store.  This could
-// also eliminate the need for KeyV in another
-// plugin.
-//
-// Another goal is to spin this off into its
-// own package that might be of broad interest.
-
-
-// Simple key/value store on SQLITE3.
-// Support multiple stores - named
-// Each store has its own table
-
-// CREATE TABLE kvs${NAME} (
-//    key TEXT
-//    value JSON
-// )
-// The key column needs an index and to
-// be unique
-
-// Is there a way to ALTER TABLE to add
-// columns based on a JSON field?
-
-// To replace pouchdb use in tagged-content
-// there's a need for queries on fields of
-// the JSON object
-
-// This encapsulates an object with put/get/delete
-// methods for the key-value-store.
-// If ALTER TABLE is useful then an API is
-// needed for adding a queryable column.
-
-// https://github.com/kujirahand/node-sqlite-kvs
-// That's a simplistic KVS which can be used
-// as a model
-
-// Once this is complete it can be spun off to
-// a standalone module.
-
-
-// CREATE TABLE kvs{NAME} (
-//     key TEXT PRIMARY KEY,
-//     value JSON // isJSON=true
-// ) WITHOUT ROWID;
-
-
-// sqlite> SELECT 
-//       vpath,
-//       json_extract(info, '$.renderPath') as renderPath2 
-// FROM DOCUMENTS
-// WHERE renderPath2 LIKE '%index.html';
-
 ///////////////////// Create a table
 
 export class SQ3DataStore {
@@ -227,6 +170,91 @@ export class SQ3DataStore {
         }
         
         return undefined;
+    }
+
+    /**
+     * Determines whether the database contains an item
+     * with the given key.
+     *
+     * @param key 
+     * @returns true if an item exists, false otherwise
+     */
+    async exists(key: string): Promise<boolean> {
+        if (!this.#DB) {
+            throw new Error("Database not initialized");
+        }
+        const that = this;
+        const result = await new Promise((resolve, reject) => {
+            that.#DB.all(`
+                SELECT 1
+                  FROM ${this.#tablenm}
+                 WHERE key = $key
+                `, {
+                    $key: key
+                },
+                (err, rows) => {
+                    if (err) reject(err);
+                    else resolve(rows);
+                });
+        });
+        if (Array.isArray(result)
+         && result.length === 1
+        ) {
+            return true;
+        } else if (Array.isArray(result)
+            && result.length > 1
+        ) {
+            return false;
+        }
+        return false;
+    }
+
+    /**
+     * Fetch the keys used in the table.  Optionally the
+     * pattern parameter is the type of pattern used
+     * in an SQL LIKE clause.
+     * @param pattern An SQL LIKE pattern specifier
+     * @returns Either all keys, or the ones matching the pattern
+     */
+    async keys(pattern?: string): Promise<string[]> {
+        if (!this.#DB) {
+            throw new Error("Database not initialized");
+        }
+        const that = this;
+        const result = await new Promise((resolve, reject) => {
+            // This is a big funky - BUT -
+            // We can either query where "pattern" is a LIKE pattern
+            // or we query for all keys.
+            // That means we have two choices of query string
+            // and two choices of the values object.
+            that.#DB.all(
+                typeof pattern === 'string'
+                ? `
+                SELECT DISTINCT key
+                  FROM ${this.#tablenm}
+                 WHERE key LIKE $pattern
+                `
+                : `
+                SELECT DISTINCT key
+                  FROM ${this.#tablenm}
+                `,
+                typeof pattern === 'string'
+                ? {
+                    $pattern: pattern
+                }
+                : { },
+                (err, rows) => {
+                    if (err) reject(err);
+                    else resolve(rows.map((item: any) => {
+                        return item.key
+                    }));
+                });
+        });
+        if (Array.isArray(result)) {
+            return result;
+        } else {
+            return [];
+        }
     }
 
     /**

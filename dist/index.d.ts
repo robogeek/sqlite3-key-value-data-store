@@ -7,6 +7,22 @@ export declare class SQ3DataStore {
     update(key: string, value: any): Promise<void>;
     get(key: string): Promise<any | undefined>;
     /**
+     * Determines whether the database contains an item
+     * with the given key.
+     *
+     * @param key
+     * @returns true if an item exists, false otherwise
+     */
+    exists(key: string): Promise<boolean>;
+    /**
+     * Fetch the keys used in the table.  Optionally the
+     * pattern parameter is the type of pattern used
+     * in an SQL LIKE clause.
+     * @param pattern An SQL LIKE pattern specifier
+     * @returns Either all keys, or the ones matching the pattern
+     */
+    keys(pattern?: string): Promise<string[]>;
+    /**
      *
      * [
      *  { '$.foo.bar': 'value' },

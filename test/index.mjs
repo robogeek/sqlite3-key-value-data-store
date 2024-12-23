@@ -301,6 +301,31 @@ describe('SINGLE KVS ITEM', function() {
         });
     });
 
+    it('should detect if key1 exists', async function() {
+        const value = await table.exists('key1');
+        assert.equal(typeof value, 'boolean');
+        assert.equal(value, true);
+    });
+
+    it('should not detect key2 exists', async function() {
+        const value = await table.exists('key2');
+        assert.equal(typeof value, 'boolean');
+        assert.equal(value, false);
+    });
+
+    it('should find key1 in keys', async function() {
+        const value = await table.keys();
+        assert.ok(Array.isArray(value));
+        assert.equal(value.length, 1);
+        assert.deepEqual(value, [ 'key1' ]);
+    });
+
+    it('should not find %key2% in keys', async function() {
+        const value = await table.keys('%key2%');
+        assert.ok(Array.isArray(value));
+        assert.equal(value.length, 0);
+    });
+
     it('should delete the item', async function() {
         await table.delete('key1');
     });
@@ -414,6 +439,29 @@ describe('MULTIPLE ITEMS', function() {
             }
         }
         assert.ok(!errored);
+    });
+
+    it('should find 8 keys', async function() {
+        const value = await table.keys();
+        assert.ok(Array.isArray(value));
+        assert.equal(value.length, 8);
+        assert.deepEqual(value, [
+            'key0', 'key1', 'key2', 'key3',
+            'key4', 'key5', 'key6', 'key7'
+        ]);
+    });
+
+    it('should find 1 item', async function() {
+        const value = await table.keys('%key2%');
+        assert.ok(Array.isArray(value));
+        assert.equal(value.length, 1);
+        assert.deepEqual(value, [ 'key2' ]);
+    });
+
+    it('should verify key4 exists', async function() {
+        const value = await table.exists('key4');
+        assert.ok(typeof value === 'boolean');
+        assert.equal(value, true);
     });
 
     it('should retrieve 4th item', async function() {

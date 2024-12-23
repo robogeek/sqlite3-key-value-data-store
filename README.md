@@ -1,12 +1,14 @@
 # Key/Value store for SQLite3, with data search features
 
-The `sqlite3-key-value-data-store` package is primarily a key/value store.  It runs on top of SQLITE3, and is meant to be used in-memory (`:memory:`).
+The `sq3-kv-data-store` package is primarily a key/value store built on top of SQLITE3.  While it is meant to be used in-memory (`:memory:`), it can be used with any SQLITE3 storage location.  Its tables can be stored alongside other tables in an application using SQLITE3.
 
-Like other KVS packages it has `put`, `get`, `update`, and `delete` methods that take a simple text _key_ to add/retrieve/update/delete a _value_. The _value_ is treated as, and stored as, JSON.
+# Features
 
-The additional feature of interest is the `find` method allowing MongoDB-like searching on the JSON data.  This relies on SQLITE3's built-in JSON capabilities.  Selector objects are converted, on the fly, into SQL WHERE clauses testing JSON fields.
+* Like other KVS packages it has `put`, `get` `update`, and `delete` methods that take a simple text _key_ to add/retrieve/update/delete a _value_. The _value_ is treated as, and stored as, JSON.
+* It also supports `keys` and `exists` methods.
+* It supports a powerful `find` operating for performing Mango/Mongo-like queries on the JSON values stored in the `value` field.  This relies on SQLITE3's built-in JSON capabilities.  Selector objects are converted, on the fly, into SQL WHERE clauses testing JSON fields.
 
-Comparison to related packages:
+# Comparison to related packages
 
 * KeyV is a typical key/value store.
     * Its API supports `get`, `set` and `delete` methods.
@@ -23,7 +25,7 @@ Comparison to related packages:
 Install:
 
 ```shell
-$ npm install sqlite3-key-value-data-store --save
+$ npm install sq3-kv-data-store --save
 ```
 
 Usage:
@@ -31,7 +33,7 @@ Usage:
 ```js
 import sqlite3 from 'sqlite3';
 import * as sqlite_regex from "sqlite-regex";
-import { SQ3DataStore } from 'sqlite3-key-value-data-store';
+import { SQ3DataStore } from 'sq3-kv-data-store';
 ```
 
 At the moment this package only supports use in ESM contexts.  To use in CommonJS code, use the `import()` function.
@@ -54,13 +56,13 @@ new SQ3DataStore(
     tablenm: string)
 ```
 
-In `sqlite3-key-value-data-store` we can store multiple pools of key/value data.  Each pool corresponds to a dynamically created SQLITE3 table.
+In `sq3-kv-data-store` we can store multiple pools of key/value data.  Each pool corresponds to a dynamically created SQLITE3 table.
 
 Instantiating an instance of the `SQ3DataStore` class generates a simple table in the SQLITE3 instance specified in the `DB` parameter.  The `tablenm` parameter gives the name for the table.
 
-One may share an SQLITE3 instance between `sqlite3-key-value-data-store` and other code that is also storing tables.  Passing a `Database` instance in the `DB` parameter allows using an existing SQLITE3 instance.  Passing a _string_ instead generates a new Database object connecting to the connection URL in the string.
+One may share an SQLITE3 instance between `sq3-kv-data-store` and other code that is also storing tables.  Passing a `Database` instance in the `DB` parameter allows using an existing SQLITE3 instance.  Passing a _string_ instead generates a new Database object connecting to the connection URL in the string.
 
-No attempt is made by `sqlite3-key-value-data-store` to avoid conflicting tables. It's up to your application to not step on other tables in your SQLITE3 instance.
+No attempt is made by `sq3-kv-data-store` to avoid conflicting tables. It's up to your application to not step on other tables in your SQLITE3 instance.
 
 ```js
 const table1 = new SQ3DataStore(':memory:', 'table1');
@@ -100,6 +102,23 @@ SQ3DataStore#get(key: string)
 ```
 
 Retrieves the value for the provided key.
+
+```js
+SQ3DataStore#get(key: string)
+    : Promise<boolean>
+```
+
+Determines whether the database table contains an item with the given key.
+
+The return value is `true` if such an item exists, and `false` otherwise.
+
+
+```js
+SQ3DataStore#keys(pattern?: string)
+    : Promise<string[]>
+```
+
+Retrieves the keys currently existing in the database table.  The `pattern` parameter allows specifying a LIKE pattern.  If specified the returned keys will match the pattern.
 
 ```js
 SQ3DataStore#find(selectors: Array<any>)
@@ -180,7 +199,7 @@ The `$null` operator matches both fields which are `undefined` or contain the va
 
 **`$exists`**
 
-Attempts to determine if the item exists using the `EXISTS` operator.  However, this produces a syntax error from SQLITE3.
+Attempts to determine if the item exists using the `EXISTS` operator.  However, KNOWN BUG, this produces a syntax error from SQLITE3.  See https://github.com/robogeek/sqlite3-key-value-data-store/issues/1
 
 **`$or` or `$and`**
 
