@@ -104,7 +104,7 @@ SQ3DataStore#get(key: string)
 Retrieves the value for the provided key.
 
 ```js
-SQ3DataStore#get(key: string)
+SQ3DataStore#exists(key: string)
     : Promise<boolean>
 ```
 
