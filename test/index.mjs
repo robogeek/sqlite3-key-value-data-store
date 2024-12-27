@@ -19,6 +19,13 @@ let DB; // : Database;
 //  for the find method
 
 describe('SELECTORS for find method', function() {
+
+    it('should format empty selector', function() {
+        const where = selectors2where({});
+        assert.equal(typeof where, 'string');
+        assert.equal(where.length, 0);
+    });
+
     it('should format simple equal', function() {
         const where = selectors2where({
             foo: 'bar',
@@ -921,6 +928,80 @@ describe('COMPLEX QUERIES', function() {
             }
         }
         assert.ok(!errored);
+    });
+
+    it('should find with empty selector', async function () {
+        
+        const found = await table.find({});
+
+        // console.log(found);
+        assert.deepEqual(found, [
+            {
+              vpath: 'partials-nunjucks.html.njk',
+              mime: 'text/x-nunjucks',
+              renderPath: 'partials-nunjucks.html',
+              rendersToHTML: true,
+              dirname: '.',
+              parentDir: '/',
+              mtimeMs: '2024-11-15T16:52:01.798Z',
+              docMetadata: {
+                layout: 'default.html.ejs',
+                title: 'Partials',
+                publicationDate: '2021-11-10T00:00:00.000Z',
+                tags: []
+              },
+              index: 1
+            },
+            {
+              vpath: 'markdoc-test.html.markdoc',
+              mime: 'text/x-markdoc',
+              renderPath: 'markdoc-test.html',
+              rendersToHTML: true,
+              dirname: '.',
+              parentDir: '/',
+              mtimeMs: '2022-11-06T05:57:57.971Z',
+              docMetadata: {
+                title: 'Markdoc test using the standard Markdown test',
+                layout: 'default-once.html.ejs',
+                tags: []
+              },
+              index: 2
+            },
+            {
+              vpath: 'hier-broke/dir1/sibling.html.md',
+              mime: 'text/markdown',
+              renderPath: 'hier-broke/dir1/sibling.html',
+              rendersToHTML: true,
+              dirname: 'hier-broke/dir1',
+              parentDir: 'hier-broke',
+              mtimeMs: '2022-09-21T19:34:54.577Z',
+              docMetadata: {
+                title: 'dir1 sibling item',
+                layout: 'default.html.ejs',
+                publicationDate: '2021-11-30T00:00:00.000Z',
+                tags: []
+              },
+              index: 3
+            },
+            {
+              vpath: 'subdir/shown-content-local.html.md',
+              mime: 'text/markdown',
+              renderPath: 'subdir/shown-content-local.html',
+              rendersToHTML: true,
+              dirname: 'subdir',
+              parentDir: '.',
+              mtimeMs: '2022-09-21T19:34:33.816Z',
+              docMetadata: {
+                layout: 'default.html.ejs',
+                title: 'Shown LOCAL Content - solely for use of show-content-local.html',
+                publicationDate: '2021-11-28T00:00:00.000Z',
+                tags: []
+              },
+              index: 4,
+              exists: true,
+              null: null
+            }
+        ]);
     });
 
     it('should retrieve partials-nunjucks.html.njk simple equal', async function() {

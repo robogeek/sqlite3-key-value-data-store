@@ -283,9 +283,15 @@ export class SQ3DataStore {
     {
         let where = selectors2where(selectors);
 
-        // console.log(where);
+        // An empty selector should return all items
+        if (!(where
+            && typeof where === 'string'
+            && where.length >= 1)) {
+            return this.findAll();
+        }
+        // console.log(`${util.inspect(selectors)} ==> ${where}`);
 
-        const query = `
+        const query =`
                 SELECT key, value
                   FROM ${this.#tablenm}
                  WHERE ${where}
